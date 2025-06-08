@@ -1,4 +1,8 @@
-# doc - Document Ordering Clerk (D.O.C.)
+# doc - Document Ordering Clerk
+
+[![Go](https://github.com/bigdra50/doc/actions/workflows/go.yml/badge.svg)](https://github.com/bigdra50/doc/actions/workflows/go.yml)
+[![Go Report Card](https://goreportcard.com/badge/github.com/bigdra50/doc)](https://goreportcard.com/report/github.com/bigdra50/doc)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 A simple command-line tool for translating documents while preserving the original format using multiple LLM providers (Claude Code, OpenAI, Anthropic).
 
@@ -211,4 +215,3 @@ rm -f doc
 ## License
 
 MIT License
-
