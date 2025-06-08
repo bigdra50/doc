@@ -80,14 +80,3 @@ release:
     
     **Full Changelog**: https://github.com/bigdra50/doc/compare/{{ .PreviousTag }}...{{ .Tag }}
 
-brews:
-  - repository:
-      owner: bigdra50
-      name: homebrew-tap
-      token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
-    directory: Formula
-    homepage: https://github.com/bigdra50/doc
-    description: "Document Ordering Clerk - A CLI tool for translating documents while preserving format"
-    license: MIT
-    test: |
-      system "#{bin}/doc", "--list"
