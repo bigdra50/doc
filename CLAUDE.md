@@ -1,10 +1,26 @@
 # doc - Document Ordering Clerk (D.O.C.)
 
+[![Go](https://github.com/bigdra50/doc/actions/workflows/go.yml/badge.svg)](https://github.com/bigdra50/doc/actions/workflows/go.yml)
+[![Go Report Card](https://goreportcard.com/badge/github.com/bigdra50/doc)](https://goreportcard.com/report/github.com/bigdra50/doc)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 A simple command-line tool for translating documents while preserving their original format using multiple LLM providers (Claude Code, OpenAI, Anthropic) with intelligent response handling.
 
 ## Project Overview
 
 This is a Go-based CLI tool that follows the UNIX philosophy of "do one thing well" - translate documents in any format while maintaining their structure perfectly. Features structured JSON response processing for robust error handling and intelligent translation status detection.
+
+## Installation
+
+```bash
+# Install from GitHub
+go install github.com/bigdra50/doc@latest
+
+# Or build from source
+git clone https://github.com/bigdra50/doc.git
+cd doc
+go build -o doc .
+```
 
 ## Build and Test Commands
 
@@ -13,7 +29,13 @@ This is a Go-based CLI tool that follows the UNIX philosophy of "do one thing we
 go build -o doc .
 
 # Run tests
-go test
+go test ./...
+
+# Run with coverage
+go test -v -race -coverprofile=coverage.txt -covermode=atomic ./...
+
+# Run linter
+golangci-lint run
 
 # Clean build artifacts
 rm -f doc
@@ -48,14 +70,37 @@ The tool supports multiple LLM providers through environment variable configurat
 
 2. **OpenAI API**
    - Requires OpenAI API key
-   - Uses function calling for structured translation
-   - Model: GPT-4
+   - Direct prompting for translation (no function calling)
+   - Default Model: gpt-4o-mini (configurable)
 
 3. **Anthropic Claude API** 
    - Requires Anthropic API key
    - (Not yet implemented - future enhancement)
 
-### Environment Configuration
+### Configuration
+
+The tool supports configuration through multiple methods:
+
+#### 1. Configuration File (Recommended)
+
+```bash
+# Initialize configuration file
+doc --init-config
+
+# Show current configuration
+doc --config
+
+# Set configuration values
+doc --set provider=openai
+doc --set openai_api_key=sk-your-key
+doc --set openai_model=gpt-4o
+```
+
+Configuration file location (follows XDG Base Directory spec):
+- `$XDG_CONFIG_HOME/bigdra50/doc/config.toml`
+- `~/.config/bigdra50/doc/config.toml` (fallback)
+
+#### 2. Environment Variables
 
 ```bash
 # Provider Selection (default: claude-code)
@@ -65,9 +110,25 @@ export LLM_PROVIDER=claude-code  # or 'openai' or 'anthropic'
 export OPENAI_API_KEY=sk-your-openai-api-key
 export ANTHROPIC_API_KEY=sk-ant-your-anthropic-api-key
 
+# Model Selection
+export OPENAI_MODEL=gpt-4o-mini
+export ANTHROPIC_MODEL=claude-3-5-haiku-20241022
+export CLAUDE_MODEL=sonnet
+
 # Optional: Custom Claude Code CLI path
 export CLAUDE_CODE_PATH=/custom/path/to/claude
 ```
+
+#### 3. .env File
+
+```bash
+# Create .env file in current directory
+echo "LLM_PROVIDER=openai" > .env
+echo "OPENAI_API_KEY=sk-your-key" >> .env
+echo "OPENAI_MODEL=gpt-4o-mini" >> .env
+```
+
+Priority: Environment Variables > Config File > .env File > Defaults
 
 ### Usage Examples
 
@@ -94,6 +155,9 @@ cat document.md | doc ja
 - **Comprehensive Error Handling**: Different exit codes for specific error conditions
 - **Verbose Logging**: Debug mode with `-v` flag showing internal processing steps
 - **Shell-Friendly**: Proper stdin/stdout handling for UNIX pipelines
+- **Configuration Management**: Persistent settings with XDG Base Directory support
+- **Model Selection**: Choose from multiple models per provider
+- **CI/CD Integration**: GitHub Actions workflows for testing and releases
 
 ## Architecture
 
@@ -101,9 +165,15 @@ cat document.md | doc ja
 - `main.go`: Core application logic with provider abstraction
 - `provider.go`: LLMProvider interface and configuration management
 - `claude_provider.go`: Claude Code CLI implementation
-- `openai_provider.go`: OpenAI API implementation with function calling
+- `openai_provider.go`: OpenAI API implementation
 - `anthropic_provider.go`: Anthropic API implementation (placeholder)
-- `main_test.go`: Comprehensive unit tests for all functionality
+- `models.go`: Model catalog with cost information
+- `cli.go`: Command-line argument parsing and help
+- `language.go`: Language code validation and suggestions
+- `translation.go`: Translation orchestration logic
+- `ui.go`: Terminal UI components (spinner, logging)
+- `internal/config/`: Configuration management with TOML support
+- `internal/utils/`: Utility functions
 
 ### Key Components
 - **LLMProvider Interface**: Unified abstraction for all translation providers
@@ -136,10 +206,12 @@ cat document.md | doc ja
 
 ## Dependencies
 
-- Go 1.19+
-- **Claude Code Provider**: Claude Code SDK (pre-installed)
-- **OpenAI Provider**: Valid OPENAI_API_KEY environment variable
-- **Anthropic Provider**: Valid ANTHROPIC_API_KEY environment variable (not yet implemented)
+- Go 1.21+ (tested with 1.21, 1.22, 1.23)
+- **Claude Code Provider**: Claude Code CLI (`npm install -g @anthropic-ai/claude-code`)
+- **OpenAI Provider**: Valid OPENAI_API_KEY
+- **Anthropic Provider**: Valid ANTHROPIC_API_KEY (not yet implemented)
+- **External Dependencies**:
+  - `github.com/BurntSushi/toml`: TOML configuration file support
 
 ## Testing
 
@@ -191,3 +263,56 @@ The tool uses structured JSON communication with Claude:
 ```
 
 This enables intelligent handling of edge cases like same-language documents and untranslatable content.
+
+## Model Selection
+
+### OpenAI Models
+```bash
+# List available models
+doc --list-models openai
+
+# Set model via config
+doc --set openai_model=gpt-4o
+
+# Set model via environment
+export OPENAI_MODEL=gpt-4o-mini
+```
+
+### Available Models by Provider
+
+#### OpenAI
+- **gpt-4o**: High capability, multimodal
+- **gpt-4o-mini**: Cost-effective, fast (default)
+- **gpt-4**: Classic high performance
+- **gpt-3.5-turbo**: Fast, lower cost
+
+#### Claude Code
+- **opus**: High capability
+- **sonnet**: Balanced (default)
+- **haiku**: Fast, efficient
+
+#### Anthropic (planned)
+- **claude-3-5-sonnet**: High capability
+- **claude-3-5-haiku**: Fast, efficient (default)
+
+## CI/CD
+
+The project uses GitHub Actions for continuous integration:
+
+- **Testing**: Multi-version Go testing (1.21, 1.22, 1.23)
+- **Linting**: golangci-lint for code quality
+- **Cross-platform builds**: Linux, macOS, Windows
+- **Automated releases**: GoReleaser on tag push
+- **Code coverage**: Automated coverage reports
+
+### Release Process
+```bash
+# Create and push a tag
+git tag v0.1.1
+git push origin v0.1.1
+```
+
+This triggers automated:
+- Binary builds for all platforms
+- GitHub release creation
+- Changelog generation
