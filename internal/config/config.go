@@ -124,7 +124,7 @@ func SaveConfig(config Config) error {
 	if err != nil {
 		return fmt.Errorf("failed to create config file: %v", err)
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	encoder := toml.NewEncoder(file)
 	if err := encoder.Encode(config); err != nil {
@@ -194,7 +194,7 @@ func loadEnvFile() {
 		// .env file doesn't exist or can't be opened, silently continue
 		return
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
@@ -216,7 +216,7 @@ func loadEnvFile() {
 
 		// Only set if not already set in environment
 		if os.Getenv(key) == "" {
-			os.Setenv(key, value)
+			_ = os.Setenv(key, value)
 		}
 	}
 }

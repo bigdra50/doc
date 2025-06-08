@@ -22,13 +22,13 @@ func TestLoadConfigFromEnv(t *testing.T) {
 		if envExists {
 			_ = os.Rename(".env.backup", ".env")
 		}
-		os.Setenv("LLM_PROVIDER", originalProvider)
-		os.Setenv("OPENAI_API_KEY", originalOpenAI)
+		_ = os.Setenv("LLM_PROVIDER", originalProvider)
+		_ = os.Setenv("OPENAI_API_KEY", originalOpenAI)
 	}()
 
 	// Test default config
-	os.Unsetenv("LLM_PROVIDER")
-	os.Unsetenv("OPENAI_API_KEY")
+	_ = os.Unsetenv("LLM_PROVIDER")
+	_ = os.Unsetenv("OPENAI_API_KEY")
 
 	config := LoadConfigFromEnv()
 	if config.ProviderType != ProviderTypeClaude {
@@ -36,8 +36,8 @@ func TestLoadConfigFromEnv(t *testing.T) {
 	}
 
 	// Test custom config
-	os.Setenv("LLM_PROVIDER", "openai")
-	os.Setenv("OPENAI_API_KEY", "test-key")
+	_ = os.Setenv("LLM_PROVIDER", "openai")
+	_ = os.Setenv("OPENAI_API_KEY", "test-key")
 
 	config = LoadConfigFromEnv()
 	if config.ProviderType != ProviderTypeOpenAI {

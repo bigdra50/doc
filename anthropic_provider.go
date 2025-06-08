@@ -14,7 +14,7 @@ type AnthropicProvider struct {
 // NewAnthropicProvider creates a new Anthropic provider
 func NewAnthropicProvider(config ProviderConfig) (*AnthropicProvider, error) {
 	if config.AnthropicAPIKey == "" {
-		return nil, fmt.Errorf("Anthropic API key is required")
+		return nil, fmt.Errorf("anthropic API key is required")
 	}
 
 	provider := &AnthropicProvider{
@@ -32,7 +32,7 @@ func NewAnthropicProvider(config ProviderConfig) (*AnthropicProvider, error) {
 // ValidateConfig validates the Anthropic provider configuration
 func (p *AnthropicProvider) ValidateConfig() error {
 	if p.apiKey == "" {
-		return fmt.Errorf("Anthropic API key is required")
+		return fmt.Errorf("anthropic API key is required")
 	}
 
 	// TODO: Implement API key validation
@@ -62,5 +62,5 @@ func (p *AnthropicProvider) Translate(ctx context.Context, content string, optio
 
 	// TODO: Implement Anthropic Claude API integration with tool use
 	// For now, return a placeholder response
-	return nil, fmt.Errorf("Anthropic provider not yet implemented - please use 'claude-code' or 'openai' provider")
+	return nil, fmt.Errorf("anthropic provider not yet implemented - please use 'claude-code' or 'openai' provider")
 }
