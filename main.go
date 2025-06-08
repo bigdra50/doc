@@ -24,6 +24,15 @@ func main() {
 		return
 	}
 
+	// Handle merge command
+	if cliArgs.IsMergeCommand {
+		if err := runMerge(cliArgs); err != nil {
+			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			os.Exit(1)
+		}
+		return
+	}
+
 	// Run translation
 	if err := runTranslation(cliArgs); err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
