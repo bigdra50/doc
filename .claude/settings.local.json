@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dotnet new:*)",
+      "Bash(go mod:*)",
+      "Bash(go build:*)",
+      "Bash(./xlat)",
+      "Bash(./xlat ja)",
+      "Bash(go test:*)",
+      "Bash(./xlat --list)",
+      "Bash(./xlat invalid_code)",
+      "Bash(./xlat j)",
+      "Bash(./xlat ch)",
+      "Bash(./xlat z)",
+      "Bash(mkdir:*)",
+      "Bash(cat:*)",
+      "WebFetch(domain:docs.anthropic.com)",
+      "WebFetch(domain:platform.openai.com)",
+      "Bash(./xlat --list-models)",
+      "Bash(./xlat:*)"
+    ],
+    "deny": []
+  }
+}
