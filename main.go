@@ -19,74 +19,79 @@ func main() {
 	// Set global verbose flag
 	verbose = cliArgs.Verbose
 
+	// Handle special commands
+	if handleSpecialCommands(cliArgs) {
+		return
+	}
+
+	// Run translation
+	if err := runTranslation(cliArgs); err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		os.Exit(1)
+	}
+}
+
+// handleSpecialCommands handles configuration and listing commands
+func handleSpecialCommands(cliArgs *CLIArgs) bool {
 	// Handle config commands
 	if cliArgs.ShowConfig {
 		showCurrentConfig()
-		os.Exit(0)
+		return true
 	}
-	
+
 	if cliArgs.InitConfig {
 		initConfigFile()
-		os.Exit(0)
+		return true
 	}
-	
+
 	if len(cliArgs.SetConfig) > 0 {
 		setConfigValues(cliArgs.SetConfig)
-		os.Exit(0)
+		return true
 	}
 
 	// Handle list commands
 	if cliArgs.ShowList {
 		showSupportedLanguages()
-		os.Exit(0)
+		return true
 	}
-	
+
 	if cliArgs.ShowListModels {
 		if cliArgs.ListModelsProvider != "" {
 			showModelsForProvider(cliArgs.ListModelsProvider)
 		} else {
 			showAllModels()
 		}
-		os.Exit(0)
+		return true
 	}
 
-	// Load configuration from config file and environment
+	return false
+}
+
+// runTranslation performs the main translation operation
+func runTranslation(cliArgs *CLIArgs) error {
+	// Load configuration
 	config := LoadConfig()
 	config.Verbose = verbose
 
 	if verbose {
-		log("Configuration: Provider=%s, OpenAI=%s, Anthropic=%s", 
-			config.ProviderType, 
-			maskAPIKey(config.OpenAIAPIKey), 
+		log("Configuration: Provider=%s, OpenAI=%s, Anthropic=%s",
+			config.ProviderType,
+			maskAPIKey(config.OpenAIAPIKey),
 			maskAPIKey(config.AnthropicAPIKey))
 	}
 
 	// Create LLM provider
 	provider, err := NewLLMProvider(config)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error: Failed to initialize %s provider: %v\n", config.ProviderType, err)
 		showProviderHelp(config.ProviderType)
-		os.Exit(1)
+		return fmt.Errorf("failed to initialize %s provider: %w", config.ProviderType, err)
 	}
 
 	log("Using provider: %s", provider.GetProviderName())
 
-	// Validate language code using provider's supported languages
-	supportedLangs := provider.GetSupportedLanguages()
-	if err := validateLanguageCodeWithMap(cliArgs.TargetLanguage, supportedLangs); err != nil {
-		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
-		
-		// Show similar codes if available
-		similar := getSimilarLanguageCodesWithMap(cliArgs.TargetLanguage, supportedLangs)
-		if len(similar) > 0 {
-			fmt.Fprintf(os.Stderr, "\nDid you mean:\n")
-			for _, code := range similar {
-				fmt.Fprintf(os.Stderr, "  %s - %s\n", code, supportedLangs[code])
-			}
-		}
-		
-		fmt.Fprintf(os.Stderr, "\nUse 'doc --list' to see all supported language codes.\n")
-		os.Exit(1)
+	// Validate language code
+	if err := validateLanguage(cliArgs.TargetLanguage, provider); err != nil {
+		return err
 	}
 
 	log("Target language: %s", cliArgs.TargetLanguage)
@@ -97,19 +102,39 @@ func main() {
 	// Read document from stdin
 	content, err := readDocument()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
-		os.Exit(1)
+		return err
 	}
 
 	// Perform translation
 	result, err := performTranslation(provider, content, cliArgs.TargetLanguage, cliArgs.TransformInstruction)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error: Translation failed: %v\n", err)
-		os.Exit(1)
+		return fmt.Errorf("translation failed: %w", err)
 	}
 
 	// Output the translation result
 	fmt.Print(result)
+	return nil
+}
+
+// validateLanguage validates the target language code
+func validateLanguage(targetLang string, provider LLMProvider) error {
+	supportedLangs := provider.GetSupportedLanguages()
+	if err := validateLanguageCodeWithMap(targetLang, supportedLangs); err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+
+		// Show similar codes if available
+		similar := getSimilarLanguageCodesWithMap(targetLang, supportedLangs)
+		if len(similar) > 0 {
+			fmt.Fprintf(os.Stderr, "\nDid you mean:\n")
+			for _, code := range similar {
+				fmt.Fprintf(os.Stderr, "  %s - %s\n", code, supportedLangs[code])
+			}
+		}
+
+		fmt.Fprintf(os.Stderr, "\nUse 'doc --list' to see all supported language codes.\n")
+		return err
+	}
+	return nil
 }
 
 // showCurrentConfig displays the current configuration
@@ -130,14 +155,14 @@ func showCurrentConfig() {
 // initConfigFile creates a default configuration file
 func initConfigFile() {
 	configPath := config.GetConfigPath()
-	
+
 	// Check if config file already exists
 	if _, err := os.Stat(configPath); err == nil {
 		fmt.Printf("Configuration file already exists at: %s\n", configPath)
 		fmt.Printf("Use 'doc --config' to view current settings\n")
 		return
 	}
-	
+
 	// Create default config
 	defaultConfig := config.Config{
 		ProviderType:   config.ProviderTypeClaude,
@@ -146,12 +171,12 @@ func initConfigFile() {
 		AnthropicModel: config.GetDefaultModel(config.ProviderTypeAnthropic),
 		ClaudeModel:    config.GetDefaultModel(config.ProviderTypeClaude),
 	}
-	
+
 	if err := config.SaveConfig(defaultConfig); err != nil {
 		fmt.Fprintf(os.Stderr, "Error creating config file: %v\n", err)
 		os.Exit(1)
 	}
-	
+
 	fmt.Printf("Created default configuration file at: %s\n", configPath)
 	fmt.Printf("Use 'doc --config' to view settings\n")
 	fmt.Printf("Use 'doc --set key=value' to modify settings\n")
@@ -161,7 +186,7 @@ func initConfigFile() {
 func setConfigValues(keyValuePairs []string) {
 	// Load current config
 	currentConfig := LoadConfig()
-	
+
 	// Parse and apply changes
 	for _, pair := range keyValuePairs {
 		parts := strings.SplitN(pair, "=", 2)
@@ -169,10 +194,10 @@ func setConfigValues(keyValuePairs []string) {
 			fmt.Fprintf(os.Stderr, "Error: Invalid format '%s'. Use key=value format.\n", pair)
 			os.Exit(1)
 		}
-		
+
 		key := strings.TrimSpace(parts[0])
 		value := strings.TrimSpace(parts[1])
-		
+
 		switch key {
 		case "provider":
 			if value != config.ProviderTypeClaude && value != config.ProviderTypeOpenAI && value != config.ProviderTypeAnthropic {
@@ -197,16 +222,16 @@ func setConfigValues(keyValuePairs []string) {
 			fmt.Fprintf(os.Stderr, "Valid keys: provider, openai_api_key, anthropic_api_key, claude_code_path, openai_model, anthropic_model, claude_model\n")
 			os.Exit(1)
 		}
-		
+
 		fmt.Printf("Set %s = %s\n", key, maskConfigValue(key, value))
 	}
-	
+
 	// Save updated config
 	if err := config.SaveConfig(currentConfig); err != nil {
 		fmt.Fprintf(os.Stderr, "Error saving config: %v\n", err)
 		os.Exit(1)
 	}
-	
+
 	fmt.Printf("Configuration updated successfully\n")
 }
 
@@ -217,4 +242,3 @@ func maskConfigValue(key, value string) string {
 	}
 	return value
 }
-
