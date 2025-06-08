@@ -14,13 +14,13 @@ func TestLoadConfigFromEnv(t *testing.T) {
 	envExists := false
 	if _, err := os.Stat(".env"); err == nil {
 		envExists = true
-		os.Rename(".env", ".env.backup")
+		_ = os.Rename(".env", ".env.backup")
 	}
 	
 	// Clean up after test
 	defer func() {
 		if envExists {
-			os.Rename(".env.backup", ".env")
+			_ = os.Rename(".env.backup", ".env")
 		}
 		os.Setenv("LLM_PROVIDER", originalProvider)
 		os.Setenv("OPENAI_API_KEY", originalOpenAI)

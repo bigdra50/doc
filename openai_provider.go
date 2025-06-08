@@ -267,10 +267,3 @@ func (p *OpenAIProvider) makeAPIRequest(ctx context.Context, req openAIRequest, 
 	return nil
 }
 
-// min returns the minimum of two integers
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
-}

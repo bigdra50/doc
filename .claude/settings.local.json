@@ -17,7 +17,9 @@
       "WebFetch(domain:docs.anthropic.com)",
       "WebFetch(domain:platform.openai.com)",
       "Bash(./xlat --list-models)",
-      "Bash(./xlat:*)"
+      "Bash(./xlat:*)",
+      "Bash(gh run list:*)",
+      "Bash(gh run view:*)"
     ],
     "deny": []
   }
