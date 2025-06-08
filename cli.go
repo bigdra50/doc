@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"os"
+	"strconv"
+	"strings"
 )
 
 // CLIArgs represents parsed command line arguments
@@ -16,22 +18,54 @@ type CLIArgs struct {
 	ShowConfig           bool
 	SetConfig            []string // Key=value pairs
 	InitConfig           bool
+	
+	// Merge command fields
+	IsMergeCommand       bool
+	MergeDirectory       string
+	MergeOutputFile      string
+	MergeRecursive       bool
+	MergeOrder           string
+	MergeSeparator       string
+	MergeIncludeMeta     bool
+	MergeGenerateTOC     bool
+	MergeTOCDepth        int
+	MergeAdjustHeaders   bool
+	MergeBaseLevel       int
+	MergeIncludePatterns []string
+	MergeExcludePatterns []string
+	MergeDryRun          bool
 }
 
 // parseArgs parses command line arguments and returns CLIArgs
 func parseArgs() (*CLIArgs, error) {
 	args := os.Args[1:]
-	cliArgs := &CLIArgs{}
+	cliArgs := &CLIArgs{
+		// Set merge defaults
+		MergeOrder:        "filename",
+		MergeSeparator:    "\n\n---\n\n",
+		MergeGenerateTOC:  true,
+		MergeTOCDepth:     3,
+		MergeBaseLevel:    2, // Start from H2, H1 reserved for document title
+		MergeAdjustHeaders: true, // Default to true for better document structure
+	}
 
 	// Handle verbose flag
 	if len(args) > 0 && args[0] == "-v" {
 		cliArgs.Verbose = true
 		args = args[1:]
-		log("Verbose mode enabled")
+		if verbose {
+			log("Verbose mode enabled")
+		}
 	}
 
 	if len(args) < 1 {
 		return nil, fmt.Errorf("missing required arguments")
+	}
+
+	// Check if this is a merge command
+	if args[0] == "merge" {
+		cliArgs.IsMergeCommand = true
+		return parseMergeArgs(cliArgs, args[1:])
 	}
 
 	// Handle --list options
@@ -76,12 +110,158 @@ func parseArgs() (*CLIArgs, error) {
 	return cliArgs, nil
 }
 
+// parseMergeArgs parses arguments for the merge command
+func parseMergeArgs(cliArgs *CLIArgs, args []string) (*CLIArgs, error) {
+	cliArgs.IsMergeCommand = true
+	
+	if len(args) < 1 {
+		return nil, fmt.Errorf("merge command requires a directory argument")
+	}
+
+	// Parse non-flag arguments
+	nonFlagArgs := []string{}
+	for i := 0; i < len(args); i++ {
+		arg := args[i]
+		
+		if !strings.HasPrefix(arg, "-") {
+			nonFlagArgs = append(nonFlagArgs, arg)
+			continue
+		}
+
+		// Handle flags
+		switch arg {
+		case "-r", "--recursive":
+			cliArgs.MergeRecursive = true
+		case "--dry-run":
+			cliArgs.MergeDryRun = true
+		case "--include-meta":
+			cliArgs.MergeIncludeMeta = true
+		case "--no-toc":
+			cliArgs.MergeGenerateTOC = false
+		case "--adjust-headers":
+			cliArgs.MergeAdjustHeaders = true
+		case "-o", "--output":
+			if i+1 >= len(args) {
+				return nil, fmt.Errorf("%s requires a value", arg)
+			}
+			i++
+			cliArgs.MergeOutputFile = args[i]
+		case "--order":
+			if i+1 >= len(args) {
+				return nil, fmt.Errorf("--order requires a value")
+			}
+			i++
+			if !isValidOrder(args[i]) {
+				return nil, fmt.Errorf("invalid order '%s'. Valid orders: filename, modified, size, custom", args[i])
+			}
+			cliArgs.MergeOrder = args[i]
+		case "--separator":
+			if i+1 >= len(args) {
+				return nil, fmt.Errorf("--separator requires a value")
+			}
+			i++
+			cliArgs.MergeSeparator = args[i]
+		case "--toc-depth":
+			if i+1 >= len(args) {
+				return nil, fmt.Errorf("--toc-depth requires a value")
+			}
+			i++
+			depth := parseIntOrError(args[i], "--toc-depth")
+			if depth < 1 || depth > 6 {
+				return nil, fmt.Errorf("--toc-depth must be between 1 and 6")
+			}
+			cliArgs.MergeTOCDepth = depth
+		case "--base-level":
+			if i+1 >= len(args) {
+				return nil, fmt.Errorf("--base-level requires a value")
+			}
+			i++
+			level := parseIntOrError(args[i], "--base-level")
+			if level < 1 || level > 6 {
+				return nil, fmt.Errorf("--base-level must be between 1 and 6")
+			}
+			cliArgs.MergeBaseLevel = level
+		case "--include":
+			if i+1 >= len(args) {
+				return nil, fmt.Errorf("--include requires a pattern")
+			}
+			i++
+			cliArgs.MergeIncludePatterns = append(cliArgs.MergeIncludePatterns, args[i])
+		case "--exclude":
+			if i+1 >= len(args) {
+				return nil, fmt.Errorf("--exclude requires a pattern")
+			}
+			i++
+			cliArgs.MergeExcludePatterns = append(cliArgs.MergeExcludePatterns, args[i])
+		default:
+			return nil, fmt.Errorf("unknown merge option: %s", arg)
+		}
+	}
+
+	// Assign non-flag arguments
+	if len(nonFlagArgs) < 1 {
+		return nil, fmt.Errorf("merge command requires a directory argument")
+	}
+	
+	cliArgs.MergeDirectory = nonFlagArgs[0]
+	
+	if len(nonFlagArgs) > 1 {
+		cliArgs.MergeOutputFile = nonFlagArgs[1]
+	} else if cliArgs.MergeOutputFile == "" {
+		cliArgs.MergeOutputFile = "merged.md"
+	}
+
+	return cliArgs, nil
+}
+
+// isValidOrder checks if the order type is valid
+func isValidOrder(order string) bool {
+	validOrders := []string{"filename", "modified", "size", "custom"}
+	for _, valid := range validOrders {
+		if order == valid {
+			return true
+		}
+	}
+	return false
+}
+
+// parseIntOrError parses an integer or returns an error
+func parseIntOrError(s, flag string) int {
+	if val, err := strconv.Atoi(s); err == nil {
+		return val
+	}
+	fmt.Fprintf(os.Stderr, "Error: %s requires a valid integer\n", flag)
+	os.Exit(1)
+	return 0
+}
+
 // showUsage displays the usage information
 func showUsage() {
-	fmt.Fprintf(os.Stderr, "Usage: doc [-v] <language_code> [transform_instruction]\n")
-	fmt.Fprintf(os.Stderr, "Examples:\n")
+	fmt.Fprintf(os.Stderr, "Usage: \n")
+	fmt.Fprintf(os.Stderr, "  doc [-v] <language_code> [transform_instruction]  # Translation\n")
+	fmt.Fprintf(os.Stderr, "  doc [-v] merge <directory> [output_file] [options] # Merge markdown files\n")
+	fmt.Fprintf(os.Stderr, "\nTranslation Examples:\n")
 	fmt.Fprintf(os.Stderr, "  cat README.md | doc ja\n")
 	fmt.Fprintf(os.Stderr, "  cat README.md | doc -v ru\n")
+	fmt.Fprintf(os.Stderr, "\nMerge Examples:\n")
+	fmt.Fprintf(os.Stderr, "  doc merge ./docs/                    # Merge all .md files to merged.md\n")
+	fmt.Fprintf(os.Stderr, "  doc merge ./docs/ book.md            # Merge to book.md\n")
+	fmt.Fprintf(os.Stderr, "  doc merge ./docs/ -r --include-meta  # Recursive with metadata\n")
+	fmt.Fprintf(os.Stderr, "  doc merge ./docs/ --dry-run          # Preview without merging\n")
+	fmt.Fprintf(os.Stderr, "\nMerge Options:\n")
+	fmt.Fprintf(os.Stderr, "  -o, --output FILE         Output file (default: merged.md)\n")
+	fmt.Fprintf(os.Stderr, "  -r, --recursive           Include subdirectories\n")
+	fmt.Fprintf(os.Stderr, "  --order ORDER             Sort order: filename, modified, size, custom (default: filename)\n")
+	fmt.Fprintf(os.Stderr, "  --separator STRING        File separator (default: \\n\\n---\\n\\n)\n")
+	fmt.Fprintf(os.Stderr, "  --include PATTERN         Include files matching pattern\n")
+	fmt.Fprintf(os.Stderr, "  --exclude PATTERN         Exclude files matching pattern\n")
+	fmt.Fprintf(os.Stderr, "  --include-meta            Include metadata comments\n")
+	fmt.Fprintf(os.Stderr, "  --no-toc                  Disable table of contents\n")
+	fmt.Fprintf(os.Stderr, "  --toc-depth N             TOC depth (1-6, default: 3)\n")
+	fmt.Fprintf(os.Stderr, "  --adjust-headers          Adjust header levels\n")
+	fmt.Fprintf(os.Stderr, "  --base-level N            Base header level (1-6, default: 1)\n")
+	fmt.Fprintf(os.Stderr, "  --dry-run                 Preview without writing\n")
+	fmt.Fprintf(os.Stderr, "\nGeneral Commands:\n")
 	fmt.Fprintf(os.Stderr, "  doc --list          # Show supported language codes\n")
 	fmt.Fprintf(os.Stderr, "  doc --list-models   # Show all available models\n")
 	fmt.Fprintf(os.Stderr, "  doc --list-models openai # Show OpenAI models only\n")

@@ -4,16 +4,25 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/bigdra50/doc)](https://goreportcard.com/report/github.com/bigdra50/doc)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-A simple command-line tool for translating documents while preserving the original format using multiple LLM providers (Claude Code, OpenAI, Anthropic).
+A versatile command-line tool for document operations: **translation** and **markdown file merging** while preserving format and structure using multiple LLM providers.
 
 ## Features
 
-- **Format Preservation**: Completely maintains structures like Markdown, HTML, plain text, etc.
-- **Multiple Provider Support**: Claude Code CLI (default), OpenAI API, Anthropic API
-- **35+ Language Support**: A wide range of languages including Japanese, English, Chinese, Russian, etc.
-- **Intelligent Response Handling**: JSON structured responses, error handling
-- **Progress Display**: Animated spinner and elapsed time display
-- **Shell Integration**: Full support for UNIX pipelines
+### 🌐 Translation
+
+- Translate documents in any format while maintaining structure
+- Multiple LLM providers (Claude Code, OpenAI, Anthropic)
+- Intelligent response handling with structured JSON processing
+- 35+ language codes support with validation
+
+### 📚 Markdown File Merging
+
+- Merge multiple markdown files into a single, well-structured document
+- Automatic table of contents generation
+- Flexible file ordering (filename, modified date, size, custom)
+- Include/exclude pattern filtering
+- Header level adjustment for consistent document hierarchy
+- Metadata insertion with source tracking
 
 ## Installation
 
@@ -27,191 +36,391 @@ cd doc
 go build -o doc .
 ```
 
-## Usage
+## Quick Start
+
+### Translation
+
+```bash
+# Basic translation
+cat document.md | doc ja
+
+# With verbose logging
+cat document.html | doc -v ru
+
+# Show supported languages
+doc --list
+```
+
+### Markdown File Merging
+
+```bash
+# Basic merge - creates a document with automatic title and TOC
+doc merge ./docs/
+
+# Custom output file
+doc merge ./docs/ my-book.md
+
+# Preview without writing
+doc merge ./docs/ --dry-run
+```
+
+## Markdown File Merging - Detailed Usage
+
+### Basic Commands
+
+```bash
+# Merge all .md files in current directory
+doc merge .
+
+# Merge with custom output file
+doc merge ./chapters/ book.md
+
+# Merge with verbose output
+doc -v merge ./docs/ guide.md
+```
+
+### File Ordering Options
+
+```bash
+# Sort by filename (default)
+doc merge ./docs/ --order filename
+
+# Sort by modification date (oldest first)
+doc merge ./docs/ --order modified
+
+# Sort by file size (smallest first)
+doc merge ./docs/ --order size
+
+# Use custom order file (.docorder)
+doc merge ./docs/ --order custom
+```
+
+### Filtering Options
+
+```bash
+# Include only specific patterns
+doc merge ./docs/ --include "chapter*.md"
+
+# Exclude specific files
+doc merge ./docs/ --exclude "README.md" --exclude "CHANGELOG.md"
+
+# Combine include/exclude (multiple patterns)
+doc merge ./docs/ --include "*.md" --exclude "draft_*" --exclude "*_backup.md"
+
+# Recursive directory scanning
+doc merge ./project/ -r --include "docs/*.md"
+```
+
+### Document Structure Control
+
+```bash
+# Disable table of contents
+doc merge ./docs/ --no-toc
+
+# Custom TOC depth (1-6 levels)
+doc merge ./docs/ --toc-depth 2
+
+# Disable automatic header adjustment (keep original levels)
+doc merge ./docs/ --adjust-headers=false
+
+# Custom base header level (useful for embedding in larger documents)
+doc merge ./docs/ --base-level 3
+```
+
+### Metadata and Formatting
+
+```bash
+# Include metadata comments (source files, generation time)
+doc merge ./docs/ --include-meta
+
+# Custom file separator
+doc merge ./docs/ --separator "\\n\\n***\\n\\n"
+
+# Combine multiple options
+doc merge ./docs/ book.md --include-meta --toc-depth 2 --order modified
+```
+
+### Advanced Use Cases
+
+#### 📖 Creating a Book from Chapters
+
+```bash
+# Organize chapters with proper hierarchy
+doc merge ./chapters/ my-book.md \\
+  --order filename \\
+  --include "chapter*.md" \\
+  --include-meta \\
+  --toc-depth 3
+```
+
+#### 📝 API Documentation
+
+```bash
+# Merge API docs with custom structure
+doc merge ./api-docs/ api-reference.md \\
+  --order custom \\
+  --base-level 2 \\
+  --separator "\\n\\n---\\n\\n" \\
+  --exclude "internal_*"
+```
+
+#### 🎓 Course Materials
+
+```bash
+# Create course handbook from lessons
+doc merge ./lessons/ course-handbook.md \\
+  -r \\
+  --include "lesson*.md" \\
+  --include "exercise*.md" \\
+  --order modified \\
+  --include-meta
+```
+
+#### 📊 Project Documentation
+
+```bash
+# Merge project docs excluding drafts
+doc merge ./project-docs/ project-guide.md \\
+  -r \\
+  --exclude "draft_*" \\
+  --exclude "*_wip.md" \\
+  --exclude "README.md" \\
+  --toc-depth 4 \\
+  --include-meta
+```
+
+#### 🔬 Research Papers Collection
+
+```bash
+# Merge research notes by date
+doc merge ./research/ research-compilation.md \\
+  --order modified \\
+  --include "*.md" \\
+  --exclude "template*" \\
+  --base-level 2 \\
+  --separator "\\n\\n---\\n\\n"
+```
+
+### Custom Order File (.docorder)
+
+Create a `.docorder` file in your source directory to specify custom ordering:
+
+```
+# .docorder example
+introduction.md
+chapter-01-basics.md
+chapter-02-advanced.md
+chapter-03-examples.md
+appendix.md
+references.md
+```
+
+Then use:
+
+```bash
+doc merge ./docs/ --order custom
+```
+
+### Default Behavior
+
+The merge command uses these intelligent defaults:
+
+- **Document Title**: Auto-generated from output filename
+
+  - `book.md` → `# Book`
+  - `user-guide.md` → `# User Guide`
+  - `api_reference.md` → `# Api Reference`
+
+- **Header Hierarchy**: Automatic adjustment for clean structure
+
+  - Original `# Chapter 1` → `## Chapter 1` (H2)
+  - Original `## Section` → `### Section` (H3)
+  - And so on...
+
+- **Table of Contents**: Generated at H2 level with 3-level depth
+- **File Separator**: Clean `---` dividers between files
+
+### Example Output Structure
+
+```markdown
+# My Book
+
+## Table of Contents
+
+- [Chapter 1](#chapter-1)
+  - [Introduction](#introduction)
+  - [Getting Started](#getting-started)
+- [Chapter 2](#chapter-2)
+  - [Advanced Topics](#advanced-topics)
+
+<!-- Source: chapter1.md -->
+
+## Chapter 1
+
+### Introduction
+
+Content from the first chapter...
+
+### Getting Started
+
+Step-by-step instructions...
+
+---
+
+<!-- Source: chapter2.md -->
+
+## Chapter 2
+
+### Advanced Topics
+
+Advanced content here...
+```
+
+## Translation Usage
 
 ### Basic Translation
 
 ```bash
-# Translate from standard input to Japanese
+# Translate to Japanese
 cat document.md | doc ja
 
-# Translate from a file to Russian (with detailed logs)
-cat spec.html | doc -v ru
+# Translate with custom instruction
+cat spec.md | doc ja "convert from technical spec to user guide"
 
-# Display list of supported language codes
+# Show all supported languages
 doc --list
-
-# Translation with custom instructions
-cat technical_doc.md | doc ja "Convert technical specifications to user guide"
 ```
 
-### Provider Configuration
+### LLM Provider Configuration
 
-#### 1. Claude Code CLI (default)
-
-```bash
-# Installation (npm required)
-npm install -g @anthropic-ai/claude-code
-
-# Example usage
-cat document.md | doc ja
-```
-
-#### 2. OpenAI API
+#### Environment Variables
 
 ```bash
-# Set API key
-export OPENAI_API_KEY=sk-your-openai-api-key
+# Use OpenAI (requires API key)
 export LLM_PROVIDER=openai
+export OPENAI_API_KEY=sk-your-key
+cat document.md | doc ja
 
-# Example usage
+# Use Anthropic Claude (requires API key)
+export LLM_PROVIDER=anthropic
+export ANTHROPIC_API_KEY=sk-ant-your-key
 cat document.md | doc ja
 ```
 
-#### 3. Anthropic API
+#### Configuration File
 
 ```bash
-# Set API key
-export ANTHROPIC_API_KEY=sk-ant-your-anthropic-api-key
-export LLM_PROVIDER=anthropic
+# Initialize config
+doc --init-config
 
-# Example usage (coming soon)
-cat document.md | doc ja
+# Set provider and API keys
+doc --set provider=openai
+doc --set openai_api_key=sk-your-key
+doc --set openai_model=gpt-4o
+
+# View current config
+doc --config
+```
+
+## Build and Test
+
+```bash
+# Build
+go build -o doc .
+
+# Run tests
+go test ./...
+
+# Run with coverage
+go test -v -race -coverprofile=coverage.txt -covermode=atomic ./...
+
+# Run linter (if golangci-lint is installed)
+golangci-lint run
 ```
 
 ## Configuration
 
-### Configuration File
+### Supported Providers
 
-The tool supports persistent configuration via TOML file:
+1. **Claude Code CLI** (default)
 
-```bash
-# Initialize configuration file
-doc --init-config
+   - No API key required
+   - Uses installed Claude Code SDK
 
-# Show current configuration
-doc --config
+2. **OpenAI API**
 
-# Set configuration values
-doc --set provider=openai
-doc --set openai_api_key=sk-your-key
-doc --set openai_model=gpt-4o
-```
+   - Requires `OPENAI_API_KEY`
+   - Default model: `gpt-4o-mini`
 
-Configuration file location follows XDG Base Directory specification:
+3. **Anthropic Claude API**
+   - Requires `ANTHROPIC_API_KEY`
+   - Default model: `claude-3-5-haiku-20241022`
 
-- `$XDG_CONFIG_HOME/bigdra50/doc/config.toml`
-- `~/.config/bigdra50/doc/config.toml` (fallback)
+### Configuration Locations
 
-### Environment Variables
+- Config file: `~/.config/bigdra50/doc/config.toml`
+- Environment variables (override config file)
+- `.env` file in current directory
 
-Environment variables override configuration file settings:
+## Error Handling
 
-#### Environment Configuration File
+### Exit Codes
 
-```bash
-# Create .env file
-echo "LLM_PROVIDER=openai" > .env
-echo "OPENAI_API_KEY=sk-your-api-key" >> .env
-echo "OPENAI_MODEL=gpt-4o-mini" >> .env
-```
+- **0**: Success
+- **1**: General errors (invalid arguments, file not found, etc.)
+- **2**: SAME_LANGUAGE - Document already in target language
+- **3**: UNTRANSLATABLE - Content cannot be translated
+- **4**: FORMAT_ERROR - Document format too complex
+- **5**: CONTENT_ERROR - Document content corrupted
 
-### Model Selection
+## Examples
 
-```bash
-# List available models
-doc --list-models
+### Complete Workflow Examples
 
-# Display models by provider
-doc --list-models openai
-doc --list-models anthropic
-```
-
-## Supported Languages
-
-| Code | Language   | Code | Language | Code | Language |
-| ---- | ---------- | ---- | -------- | ---- | -------- |
-| ja   | Japanese   | en   | English  | ko   | Korean   |
-| zh   | Chinese    | ru   | Russian  | es   | Spanish  |
-| fr   | French     | de   | German   | it   | Italian  |
-| pt   | Portuguese | ar   | Arabic   | hi   | Hindi    |
-
-You can check the complete list with `doc --list`.
-
-## Environment Variables
-
-| Variable Name       | Description        | Default Value               |
-| ------------------- | ------------------ | --------------------------- |
-| `LLM_PROVIDER`      | Provider selection | `claude-code`               |
-| `OPENAI_API_KEY`    | OpenAI API key     | -                           |
-| `ANTHROPIC_API_KEY` | Anthropic API key  | -                           |
-| `OPENAI_MODEL`      | OpenAI model       | `gpt-4o-mini`               |
-| `ANTHROPIC_MODEL`   | Anthropic model    | `claude-3-5-haiku-20241022` |
-| `CLAUDE_MODEL`      | Claude Code model  | `sonnet`                    |
-
-## Error Codes
-
-| Code | Description                                         |
-| ---- | --------------------------------------------------- |
-| 0    | Success                                             |
-| 1    | System error (no input, configuration issues, etc.) |
-| 2    | Same language (already in target language)          |
-| 3    | Translation not possible (code, data, etc.)         |
-| 4    | Format error                                        |
-| 5    | Content error                                       |
-
-## Example Execution
+#### Technical Documentation
 
 ```bash
-# Basic translation
-echo "Hello World" | doc ja
-# → こんにちは世界
+# Create comprehensive technical docs
+doc merge ./tech-docs/ technical-guide.md \\
+  -r \\
+  --include "*.md" \\
+  --exclude "draft_*" \\
+  --order filename \\
+  --include-meta \\
+  --toc-depth 4
 
-# Same language detection
-echo "こんにちは" | doc ja
-# → Exit code 2
-
-# Markdown format preservation
-echo "# Title\n- List item" | doc ja
-# → # タイトル\n- リスト項目
-
-# Progress display
-cat large_document.md | doc -v ja
-# [INFO] Reading document...
-# ⠋ Translating with Claude Code CLI... (2.3s)
-# ✓ Translation completed (2.3s)
+# Then translate to Japanese
+cat technical-guide.md | doc ja > technical-guide-ja.md
 ```
 
-## Development & Testing
+#### Multi-language Book
 
 ```bash
-# Run tests
-go test
+# Merge chapters into book
+doc merge ./chapters/ book-en.md --order filename --include-meta
 
-# Build
-go build -o doc .
-
-# Cleanup
-rm -f doc
+# Translate to multiple languages
+cat book-en.md | doc ja > book-ja.md
+cat book-en.md | doc zh > book-zh.md
+cat book-en.md | doc es > book-es.md
 ```
 
-## Architecture
+## Contributing
 
-### Core Components
-
-- **main.go**: CLI processing, application logic
-- **provider.go**: LLM provider interface
-- **claude_provider.go**: Claude Code CLI implementation
-- **openai_provider.go**: OpenAI API implementation
-- **models.go**: Model catalog, cost calculation
-
-### Design Principles
-
-1. **Interface-Centric**: Unified LLMProvider abstraction
-2. **Environment-Driven**: Support for `.env` files, environment variables
-3. **Error Handling**: Detailed exit code system
-4. **Format Preservation**: Complete maintenance of original document structure
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
 ## License
 
-MIT License
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Acknowledgments
+
+- Built with Go for performance and reliability
+- Supports multiple LLM providers for flexibility
+- Follows UNIX philosophy: do one thing well
+- Comprehensive test coverage with TDD approach
+
