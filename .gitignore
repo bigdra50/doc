@@ -27,3 +27,19 @@ go.work.sum
 # env file
 .env
 build
+
+# Build artifacts
+dist/
+doc
+
+# IDE files
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+
+# goreleaser
+.goreleaser.yml.bak
