@@ -53,7 +53,7 @@ func (s *Spinner) Start() {
 	ctx, cancel := context.WithCancel(context.Background())
 	s.cancel = cancel
 	s.startTime = time.Now()
-	
+
 	s.wg.Add(1)
 	go func() {
 		defer s.wg.Done()
@@ -76,10 +76,10 @@ func (s *Spinner) Stop(finalMessage string) {
 	if s.cancel == nil {
 		return
 	}
-	
+
 	s.cancel()
 	s.wg.Wait()
-	
+
 	if isTerminal() {
 		elapsed := time.Since(s.startTime)
 		fmt.Fprintf(os.Stderr, "\r✓ %s (%s)\n", finalMessage, formatDuration(elapsed))

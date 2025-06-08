@@ -19,18 +19,18 @@ func readDocument() (string, error) {
 
 	progress("Reading document...")
 	log("Reading from stdin...")
-	
+
 	var lines []string
 	scanner := bufio.NewScanner(os.Stdin)
-	
+
 	for scanner.Scan() {
 		lines = append(lines, scanner.Text())
 	}
-	
+
 	if err := scanner.Err(); err != nil {
 		return "", fmt.Errorf("failed to read from stdin: %w", err)
 	}
-	
+
 	content := strings.Join(lines, "\n")
 	log("Read %d characters from stdin", len(content))
 
@@ -47,7 +47,7 @@ func performTranslation(provider LLMProvider, content, targetLang, customInstruc
 		TargetLanguage:    targetLang,
 		CustomInstruction: customInstruction,
 		PreserveFormat:    true,
-		Verbose:          verbose,
+		Verbose:           verbose,
 	}
 
 	providerName := provider.GetProviderName()

@@ -10,11 +10,11 @@ func TestValidateLanguageCodeWithMap(t *testing.T) {
 		"en": "English",
 		"fr": "French",
 	}
-	
+
 	tests := []struct {
-		name     string
-		code     string
-		wantErr  bool
+		name    string
+		code    string
+		wantErr bool
 	}{
 		{"Valid Japanese", "ja", false},
 		{"Valid English", "en", false},
@@ -39,7 +39,7 @@ func TestGetSimilarLanguageCodesWithMap(t *testing.T) {
 		"en": "English",
 		"es": "Spanish",
 	}
-	
+
 	tests := []struct {
 		input    string
 		expected []string

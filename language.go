@@ -8,7 +8,7 @@ import (
 // supportedLanguages maps language codes to language names
 var supportedLanguages = map[string]string{
 	"ja": "Japanese",
-	"en": "English", 
+	"en": "English",
 	"ko": "Korean",
 	"zh": "Chinese",
 	"ru": "Russian",
@@ -67,13 +67,13 @@ func validateLanguageCodeWithMap(code string, supportedLangs map[string]string) 
 // showSupportedLanguages displays all supported language codes
 func showSupportedLanguages() {
 	fmt.Fprintf(os.Stderr, "Supported language codes:\n")
-	
+
 	// Sort for consistent output
 	codes := make([]string, 0, len(supportedLanguages))
 	for code := range supportedLanguages {
 		codes = append(codes, code)
 	}
-	
+
 	// Simple sort
 	for i := 0; i < len(codes); i++ {
 		for j := i + 1; j < len(codes); j++ {
@@ -82,7 +82,7 @@ func showSupportedLanguages() {
 			}
 		}
 	}
-	
+
 	for _, code := range codes {
 		fmt.Fprintf(os.Stderr, "  %s - %s\n", code, supportedLanguages[code])
 	}
@@ -96,7 +96,7 @@ func getSimilarLanguageCodes(input string) []string {
 			similar = append(similar, code)
 		}
 	}
-	
+
 	// Simple sort
 	for i := 0; i < len(similar); i++ {
 		for j := i + 1; j < len(similar); j++ {
@@ -105,7 +105,7 @@ func getSimilarLanguageCodes(input string) []string {
 			}
 		}
 	}
-	
+
 	return similar
 }
 
@@ -117,7 +117,7 @@ func getSimilarLanguageCodesWithMap(input string, supportedLangs map[string]stri
 			similar = append(similar, code)
 		}
 	}
-	
+
 	// Simple sort
 	for i := 0; i < len(similar); i++ {
 		for j := i + 1; j < len(similar); j++ {
@@ -126,6 +126,6 @@ func getSimilarLanguageCodesWithMap(input string, supportedLangs map[string]stri
 			}
 		}
 	}
-	
+
 	return similar
 }

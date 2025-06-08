@@ -18,11 +18,11 @@ func NewClaudeCodeProvider(config ProviderConfig) (*ClaudeCodeProvider, error) {
 	provider := &ClaudeCodeProvider{
 		config: config,
 	}
-	
+
 	if err := provider.ValidateConfig(); err != nil {
 		return nil, fmt.Errorf("claude code provider configuration invalid: %w", err)
 	}
-	
+
 	return provider, nil
 }
 
@@ -33,11 +33,11 @@ func (p *ClaudeCodeProvider) ValidateConfig() error {
 	if claudePath == "" {
 		claudePath = "claude"
 	}
-	
+
 	if _, err := exec.LookPath(claudePath); err != nil {
 		return fmt.Errorf("claude command not found at %s: %w", claudePath, err)
 	}
-	
+
 	return nil
 }
 
@@ -60,10 +60,10 @@ func (p *ClaudeCodeProvider) Translate(ctx context.Context, content string, opti
 			log("Custom instruction: %s", options.CustomInstruction)
 		}
 	}
-	
+
 	// Generate prompt using existing logic
 	prompt := p.generatePrompt(options.TargetLanguage, options.CustomInstruction, content)
-	
+
 	if p.config.Verbose {
 		log("Generated prompt length: %d characters", len(prompt))
 		// Save prompt to file for debugging
@@ -71,13 +71,13 @@ func (p *ClaudeCodeProvider) Translate(ctx context.Context, content string, opti
 			log("Prompt saved to /tmp/xlat_prompt.txt for debugging")
 		}
 	}
-	
+
 	// Execute Claude command
 	result, err := p.executeClaude(ctx, prompt)
 	if err != nil {
 		return nil, fmt.Errorf("claude command execution failed: %w", err)
 	}
-	
+
 	if p.config.Verbose {
 		log("Claude command executed successfully, output length: %d characters", len(result))
 		// Save output to file for debugging
@@ -85,7 +85,7 @@ func (p *ClaudeCodeProvider) Translate(ctx context.Context, content string, opti
 			log("Output saved to /tmp/xlat_output.txt for debugging")
 		}
 	}
-	
+
 	// For now, return simple success response
 	// TODO: Add structured response parsing if needed
 	response := &TranslationResponse{
@@ -93,14 +93,14 @@ func (p *ClaudeCodeProvider) Translate(ctx context.Context, content string, opti
 		Status:  "success",
 		Message: "Translation completed successfully",
 	}
-	
+
 	return response, nil
 }
 
 // generatePrompt generates the translation prompt (migrated from main.go)
 func (p *ClaudeCodeProvider) generatePrompt(targetLang, transformInstruction, content string) string {
 	langName := supportedLanguages[targetLang]
-	
+
 	prompt := fmt.Sprintf(`Translate the following document to %s (%s).
 
 IMPORTANT:
@@ -117,7 +117,7 @@ If the document is already in %s, return it unchanged.`, langName, targetLang, l
 	}
 
 	prompt += fmt.Sprintf("\n\nDocument:\n%s", content)
-	
+
 	return prompt
 }
 
@@ -127,24 +127,24 @@ func (p *ClaudeCodeProvider) executeClaude(ctx context.Context, prompt string) (
 	if claudePath == "" {
 		claudePath = "claude"
 	}
-	
+
 	modelFlag := p.config.ClaudeModel
 	if modelFlag == "" {
 		modelFlag = "sonnet"
 	}
-	
+
 	if p.config.Verbose {
 		log("Creating claude command: %s -p --model %s", claudePath, modelFlag)
 	}
-	
+
 	cmd := exec.CommandContext(ctx, claudePath, "-p", "--model", modelFlag)
 	cmd.Stdin = strings.NewReader(prompt)
 	cmd.Stderr = os.Stderr
-	
+
 	if p.config.Verbose {
 		log("Starting claude command execution...")
 	}
-	
+
 	output, err := cmd.Output()
 	if err != nil {
 		if p.config.Verbose {
@@ -152,12 +152,12 @@ func (p *ClaudeCodeProvider) executeClaude(ctx context.Context, prompt string) (
 		}
 		return "", fmt.Errorf("claude command execution failed: %w", err)
 	}
-	
+
 	result := strings.TrimSpace(string(output))
-	
+
 	if result == "" {
 		return "", fmt.Errorf("claude returned empty response")
 	}
-	
+
 	return result, nil
 }

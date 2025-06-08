@@ -167,9 +167,9 @@ func EstimateCost(model Model, inputLength, outputLength int) float64 {
 	// Rough estimation: 1 token ≈ 4 characters
 	inputTokens := float64(inputLength) / 4.0
 	outputTokens := float64(outputLength) / 4.0
-	
+
 	inputCost := (inputTokens / 1000000.0) * model.InputCostPer1M
 	outputCost := (outputTokens / 1000000.0) * model.OutputCostPer1M
-	
+
 	return inputCost + outputCost
 }

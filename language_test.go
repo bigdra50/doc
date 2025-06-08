@@ -6,9 +6,9 @@ import (
 
 func TestValidateLanguageCode(t *testing.T) {
 	tests := []struct {
-		name     string
-		code     string
-		wantErr  bool
+		name    string
+		code    string
+		wantErr bool
 	}{
 		{"Valid Japanese", "ja", false},
 		{"Valid English", "en", false},
@@ -33,13 +33,13 @@ func TestValidateLanguageCode(t *testing.T) {
 func TestSupportedLanguagesMap(t *testing.T) {
 	// Test that common language codes exist
 	requiredCodes := []string{"ja", "en", "ru", "zh", "es", "fr", "de"}
-	
+
 	for _, code := range requiredCodes {
 		if _, exists := supportedLanguages[code]; !exists {
 			t.Errorf("Required language code %s not found in supportedLanguages", code)
 		}
 	}
-	
+
 	// Test that all values are non-empty
 	for code, name := range supportedLanguages {
 		if name == "" {

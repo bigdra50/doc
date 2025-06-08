@@ -13,19 +13,19 @@ import (
 // Config holds configuration for provider creation
 type Config struct {
 	ProviderType string `toml:"provider"`
-	
+
 	// API Keys
 	OpenAIAPIKey    string `toml:"openai_api_key"`
 	AnthropicAPIKey string `toml:"anthropic_api_key"`
-	
+
 	// Claude Code CLI path
 	ClaudeCodePath string `toml:"claude_code_path"`
-	
+
 	// Model Selection
 	OpenAIModel    string `toml:"openai_model"`
 	AnthropicModel string `toml:"anthropic_model"`
 	ClaudeModel    string `toml:"claude_model"`
-	
+
 	// General settings
 	Verbose bool `toml:"verbose"`
 }
@@ -62,18 +62,18 @@ func Load() Config {
 		ClaudeModel:    GetDefaultModel(ProviderTypeClaude),
 		Verbose:        false,
 	}
-	
+
 	// Load from config file if it exists
 	if configPath := GetConfigPath(); configPath != "" {
 		if fileConfig, err := loadFromFile(configPath); err == nil {
 			mergeConfig(&config, fileConfig)
 		}
 	}
-	
+
 	// Override with environment variables and .env file
 	loadEnvFile()
 	config = overrideWithEnv(config)
-	
+
 	return config
 }
 
@@ -97,7 +97,7 @@ func GetConfigDir() string {
 	if xdgConfigHome := os.Getenv("XDG_CONFIG_HOME"); xdgConfigHome != "" {
 		return filepath.Join(xdgConfigHome, getConfigSubdir())
 	}
-	
+
 	// Fallback to ~/.config/bigdra50/doc
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
@@ -118,19 +118,19 @@ func SaveConfig(config Config) error {
 	if err := os.MkdirAll(configDir, 0755); err != nil {
 		return fmt.Errorf("failed to create config directory: %v", err)
 	}
-	
+
 	configPath := GetConfigPath()
 	file, err := os.Create(configPath)
 	if err != nil {
 		return fmt.Errorf("failed to create config file: %v", err)
 	}
 	defer file.Close()
-	
+
 	encoder := toml.NewEncoder(file)
 	if err := encoder.Encode(config); err != nil {
 		return fmt.Errorf("failed to encode config: %v", err)
 	}
-	
+
 	return nil
 }
 
@@ -176,7 +176,7 @@ func overrideWithEnv(config Config) Config {
 	config.OpenAIModel = getEnvOrDefault("OPENAI_MODEL", config.OpenAIModel)
 	config.AnthropicModel = getEnvOrDefault("ANTHROPIC_MODEL", config.AnthropicModel)
 	config.ClaudeModel = getEnvOrDefault("CLAUDE_MODEL", config.ClaudeModel)
-	
+
 	return config
 }
 
@@ -199,21 +199,21 @@ func loadEnvFile() {
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
 		line := strings.TrimSpace(scanner.Text())
-		
+
 		// Skip empty lines and comments
 		if line == "" || strings.HasPrefix(line, "#") {
 			continue
 		}
-		
+
 		// Parse KEY=VALUE format
 		parts := strings.SplitN(line, "=", 2)
 		if len(parts) != 2 {
 			continue
 		}
-		
+
 		key := strings.TrimSpace(parts[0])
 		value := strings.TrimSpace(parts[1])
-		
+
 		// Only set if not already set in environment
 		if os.Getenv(key) == "" {
 			os.Setenv(key, value)

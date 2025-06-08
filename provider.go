@@ -17,9 +17,9 @@ type TranslationResponse struct {
 
 // TranslationOptions holds configuration for translation operations
 type TranslationOptions struct {
-	TargetLanguage     string
-	CustomInstruction  string
-	PreserveFormat     bool
+	TargetLanguage    string
+	CustomInstruction string
+	PreserveFormat    bool
 	Verbose           bool
 }
 
@@ -27,13 +27,13 @@ type TranslationOptions struct {
 type LLMProvider interface {
 	// Translate translates the given content using the specified options
 	Translate(ctx context.Context, content string, options TranslationOptions) (*TranslationResponse, error)
-	
+
 	// ValidateConfig validates the provider configuration
 	ValidateConfig() error
-	
+
 	// GetProviderName returns the name of the provider
 	GetProviderName() string
-	
+
 	// GetSupportedLanguages returns the list of supported language codes
 	GetSupportedLanguages() map[string]string
 }

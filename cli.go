@@ -7,22 +7,22 @@ import (
 
 // CLIArgs represents parsed command line arguments
 type CLIArgs struct {
-	Verbose             bool
-	TargetLanguage      string
+	Verbose              bool
+	TargetLanguage       string
 	TransformInstruction string
-	ShowList            bool
-	ShowListModels      bool
-	ListModelsProvider  string
-	ShowConfig          bool
-	SetConfig           []string // Key=value pairs
-	InitConfig          bool
+	ShowList             bool
+	ShowListModels       bool
+	ListModelsProvider   string
+	ShowConfig           bool
+	SetConfig            []string // Key=value pairs
+	InitConfig           bool
 }
 
 // parseArgs parses command line arguments and returns CLIArgs
 func parseArgs() (*CLIArgs, error) {
 	args := os.Args[1:]
 	cliArgs := &CLIArgs{}
-	
+
 	// Handle verbose flag
 	if len(args) > 0 && args[0] == "-v" {
 		cliArgs.Verbose = true
@@ -39,7 +39,7 @@ func parseArgs() (*CLIArgs, error) {
 		cliArgs.ShowList = true
 		return cliArgs, nil
 	}
-	
+
 	if args[0] == "--list-models" {
 		cliArgs.ShowListModels = true
 		if len(args) > 1 {
@@ -47,18 +47,18 @@ func parseArgs() (*CLIArgs, error) {
 		}
 		return cliArgs, nil
 	}
-	
+
 	// Handle config commands
 	if args[0] == "--config" {
 		cliArgs.ShowConfig = true
 		return cliArgs, nil
 	}
-	
+
 	if args[0] == "--init-config" {
 		cliArgs.InitConfig = true
 		return cliArgs, nil
 	}
-	
+
 	if args[0] == "--set" {
 		if len(args) < 2 {
 			return nil, fmt.Errorf("--set requires key=value pairs")
@@ -121,21 +121,21 @@ func showProviderHelp(providerType string) {
 // showAllModels displays all available models
 func showAllModels() {
 	fmt.Fprintf(os.Stderr, "Available Models:\n\n")
-	
+
 	catalog := GetModelCatalog()
-	
+
 	fmt.Fprintf(os.Stderr, "OpenAI Models:\n")
 	for _, model := range catalog.OpenAI {
 		fmt.Fprintf(os.Stderr, "  %-25s %s (tier: %s, cost: $%.2f/$%.2f per 1M tokens)\n",
 			model.ID, model.Name, model.Tier, model.InputCostPer1M, model.OutputCostPer1M)
 	}
-	
+
 	fmt.Fprintf(os.Stderr, "\nAnthropic Models:\n")
 	for _, model := range catalog.Anthropic {
 		fmt.Fprintf(os.Stderr, "  %-25s %s (tier: %s, cost: $%.2f/$%.2f per 1M tokens)\n",
 			model.ID, model.Name, model.Tier, model.InputCostPer1M, model.OutputCostPer1M)
 	}
-	
+
 	fmt.Fprintf(os.Stderr, "\nClaude Code Models:\n")
 	fmt.Fprintf(os.Stderr, "  %-25s %s\n", "opus", "Claude Opus (high capability)")
 	fmt.Fprintf(os.Stderr, "  %-25s %s\n", "sonnet", "Claude Sonnet (balanced)")
