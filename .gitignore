@@ -43,3 +43,9 @@ doc
 
 # goreleaser
 .goreleaser.yml.bak
+
+# Documentation examples and output samples (not tracked)
+docs/examples/
+docs/llm-provider-comparison.md
+docs/model-selection-architecture.md
+output/
